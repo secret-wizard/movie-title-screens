@@ -1,61 +1,29 @@
 <!-- Full-screen view with no title bar, explicit full-bleed (small border matches device casing) -->
-<div class="view view--full no-margin no-padding" style="margin: 0; padding: 0; width: 100%; height: 100%;">
+<div class="view view--full no-margin no-padding">
   <div class="layout w--full h--full no-margin no-padding" style="margin: 0; padding: 0;">
-    <!-- Image with dithering for e-ink, fills container while maintaining aspect ratio -->
-    <img class="image image-dither w--full h--full" id="movie-poster" src="https://secret-wizard.github.io/movie-title-screens/1970s/abominabledrphibes1971bd.jpg" alt="Movie Title Screen" style="object-fit: cover; object-position: center; margin: 0; padding: 0;">
-    <!-- Hidden element to store current image index and decade -->
-    <div id="image-index" style="display: none;" data-index="0" data-decade="All Decades"></div>
+    <!-- Image, fills container while maintaining aspect ratio -->
+    <img class="image image-dither" id="movie-poster" src="https://secret-wizard.github.io/movie-title-screens/1990s/babyblood1990bd.jpg" alt="1990s Movie Title Screen">
+    <!-- Hidden element to store current image index -->
+    <div id="image-index" style="display: none;" data-index="0"></div>
   </div>
 </div>
 
+<style>
+  .image {
+    position: relative;
+    object-fit: cover;
+    object-position: center;
+    margin: 0;
+    padding: 0;
+    width: 100%;
+    height: 480px;
+  }
+</style>
+
 <!-- Plugin logic (no external TRMNL JS dependency) -->
 <script>
-  // Base URL for JSON files
-  const baseUrl = 'https://secret-wizard.github.io/movie-title-screens';
-  const decades = ['1970s', '1980s', '1990s', '2000s'];
-
-  // Get selected decade from TRMNL config (fallback to All Decades)
-  let selectedDecade = 'All Decades'; // Default
-  if (typeof TRMNL !== 'undefined' && TRMNL.plugin && TRMNL.plugin.getConfig) {
-    const config = TRMNL.plugin.getConfig();
-    selectedDecade = config.decade || 'All Decades';
-  }
-  if (!decades.includes(selectedDecade) && selectedDecade !== 'All Decades') selectedDecade = 'All Decades';
-
-  // Function to fetch a single images.json file
-  function fetchImagesJson(decade, callback) {
-    const jsonUrl = `${baseUrl}/${decade}/images.json`;
-    const xhr = new XMLHttpRequest();
-    xhr.open('GET', jsonUrl, true);
-    xhr.onreadystatechange = function () {
-      if (xhr.readyState === 4) {
-        if (xhr.status === 200) {
-          const data = JSON.parse(xhr.responseText);
-          callback(null, data.images || []);
-        } else {
-          console.error(`Failed to fetch ${jsonUrl}: ${xhr.status}`);
-          callback(`Fetch error: ${xhr.status}`, []);
-        }
-      }
-    };
-    xhr.send();
-  }
-
-  // Function to fetch all images across decades
-  function fetchAllImages(callback) {
-    let allImages = [];
-    let requestsCompleted = 0;
-
-    decades.forEach(decade => {
-      fetchImagesJson(decade, (err, images) => {
-        if (!err) allImages = allImages.concat(images);
-        requestsCompleted++;
-        if (requestsCompleted === decades.length) {
-          callback(null, allImages);
-        }
-      });
-    });
-  }
+  // URL of the JSON file with cache-busting parameter
+  const jsonUrl = 'https://secret-wizard.github.io/movie-title-screens/1990s/images.json?t=' + Date.now();
 
   // Fisher-Yates shuffle algorithm
   function shuffle(array) {
@@ -69,58 +37,45 @@
   // Global array to hold shuffled image URLs
   let shuffledImages = [];
 
-  // Function to fetch and shuffle image URLs based on selected decade
-  function fetchAndShuffleImageUrls(callback) {
-    if (selectedDecade === 'All Decades') {
-      fetchAllImages((err, allImages) => {
-        if (!err && allImages.length > 0) {
-          shuffledImages = shuffle(allImages);
-          console.log(`New image set created with ${shuffledImages.length} images from all decades`);
-          callback(null, { images: shuffledImages, index: 0 });
+  // Function to fetch and shuffle image URLs
+  function fetchAndShuffleImageUrls() {
+    console.log('Fetching and shuffling new image list...');
+    const xhr = new XMLHttpRequest();
+    xhr.open('GET', jsonUrl, true);
+    xhr.onreadystatechange = function () {
+      if (xhr.readyState === 4) {
+        if (xhr.status === 200) {
+          const data = JSON.parse(xhr.responseText);
+          if (data.images && data.images.length > 0) {
+            shuffledImages = shuffle([...data.images]);
+            console.log(`New image set created with ${shuffledImages.length} images`);
+            setRandomImage();
+          } else {
+            console.error('No images found in JSON');
+          }
         } else {
-          console.error('No images found across all decades');
-          callback('No images', { images: [], index: 0 });
+          console.error(`Failed to fetch JSON: ${xhr.status}`);
         }
-      });
-    } else {
-      fetchImagesJson(selectedDecade, (err, images) => {
-        if (!err && images.length > 0) {
-          shuffledImages = shuffle(images);
-          console.log(`New image set created with ${shuffledImages.length} images for ${selectedDecade}`);
-          callback(null, { images: shuffledImages, index: 0 });
-        } else {
-          console.error(`No images found in ${selectedDecade} JSON`);
-          callback('No images', { images: [], index: 0 });
-        }
-      });
-    }
+      }
+    };
+    xhr.send();
   }
 
   // Function to set a random image
   function setRandomImage() {
     const imageIndex = document.getElementById('image-index');
-    if (shuffledImages.length === 0) {
+    if (shuffledImages.length > 0) {
+      const randomIndex = Math.floor(Math.random() * shuffledImages.length);
+      imageIndex.dataset.index = randomIndex;
+      const selectedUrl = shuffledImages[randomIndex];
+      console.log(`Displaying image: ${selectedUrl}`);
+      document.getElementById('movie-poster').src = selectedUrl;
+    } else {
       console.error('No images available to display');
-      return;
     }
-
-    const randomIndex = Math.floor(Math.random() * shuffledImages.length);
-    imageIndex.dataset.index = randomIndex;
-    imageIndex.dataset.decade = selectedDecade;
-
-    const selectedUrl = shuffledImages[randomIndex];
-    console.log(`Displaying image: ${selectedUrl}`);
-    document.getElementById('movie-poster').src = selectedUrl; // Update immediately
   }
 
-  // Initialize and set initial image on load
+  // Initialize and set initial image on load (TRMNL should re-execute this on poll)
   console.log('Initializing plugin...');
-  fetchAndShuffleImageUrls((err, { images, index }) => {
-    if (!err && images.length > 0) {
-      shuffledImages = images;
-      const imageIndex = document.getElementById('image-index');
-      imageIndex.dataset.index = index;
-      setRandomImage(); // Trigger initial image load
-    }
-  });
+  fetchAndShuffleImageUrls();
 </script>
