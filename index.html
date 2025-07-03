@@ -1,44 +1,50 @@
-<div class="view view--full no-margin no-padding" style="width:100%;height:100%;">
-  <img id="poster"
-       class="image image-dither"
-       alt="Movie title screen"
-       style="width:100%;height:480px;object-fit:cover;object-position:center;">
-</div>
+<!-- ───────────────  POSTER  ─────────────── -->
+<img id="poster"
+     class="image image-dither"
+     alt="Movie Title Screen"
+     style="height:480px;width:auto;max-width:100%;
+            object-fit:cover;object-position:center;">
 
-<style>
-  .canvas-outer {
-    padding:0 !important;
-  }
-</style>
-
+<!-- ───────────────  LOGIC  ─────────────── -->
 <script>
 document.addEventListener('DOMContentLoaded', () => {
 
-  const decade = '{{ trmnl.plugin_settings.custom_fields_values.decade | default: "1990s" }}';
+  /* 0️⃣  Tell TRMNL to drop bleed & center contents */
+  const screen = document.querySelector('.screen');
+  if (screen) {
+    screen.classList.add(
+      'screen--no-bleed',     // removes 10 px padding
+      'layout', 'layout--center'  // centers child both axes
+    );
+  }
 
-  /* Direct GitHub raw URL — no AllOrigins needed --------------------------- */
+  /* 1️⃣  Resolve decade selector (supports “All”) */
+  const decadeSel  = '{{ trmnl.plugin_settings.custom_fields_values.decade | downcase | default: "all" }}';
+  const decadePool = ['1970s','1980s','1990s','2000s'];
+  const decade     = decadeSel === 'all'
+        ? decadePool[Math.floor(Math.random()*decadePool.length)]
+        : decadeSel;
+
+  /* 2️⃣  Build URL for that decade’s images.json */
   const jsonUrl = `https://raw.githubusercontent.com/secret-wizard/movie-title-screens/main/${decade}/images.json`;
 
-  function shuffle(arr){
-    for (let i = arr.length - 1; i > 0; i--) {
+  /* 3️⃣  Tiny shuffle helper */
+  function shuffle(a){
+    for (let i = a.length - 1; i > 0; i--) {
       const j = Math.floor(Math.random() * (i + 1));
-      [arr[i], arr[j]] = [arr[j], arr[i]];
+      [a[i], a[j]] = [a[j], a[i]];
     }
-    return arr;
+    return a;
   }
 
-  function showRandomPoster(){
-    fetch(jsonUrl)
-      .then(r => r.ok ? r.json() : Promise.reject(r.status))
-      .then(data => {
-        if (!data.images || !data.images.length) throw 'empty list';
-        const chosen = shuffle(data.images)[0];
-        document.getElementById('poster').src = chosen;
-        console.log(`[TRMNL-Movie-Screens] ${decade} → ${chosen}`);
-      })
-      .catch(err => console.error('[TRMNL-Movie-Screens] fetch error:', err));
-  }
-
-  showRandomPoster();
+  /* 4️⃣  Fetch → pick → display */
+  fetch(jsonUrl)
+    .then(r => r.ok ? r.json() : Promise.reject(r.status))
+    .then(d => {
+      if (!d.images?.length) throw 'empty list';
+      document.getElementById('poster').src = shuffle(d.images)[0];
+      console.log(`[TRMNL-Movie-Screens] ${decade} poster set`);
+    })
+    .catch(e => console.error('[TRMNL-Movie-Screens] fetch error:', e));
 });
 </script>
