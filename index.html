@@ -20,7 +20,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   /* 1️⃣  Resolve decade selector */
   const decadeSel  = '{{ trmnl.plugin_settings.custom_fields_values.decade | downcase | default: "all" }}';
-  const decadePool = ['1970s','1980s','1990s','2000s'];
+  const decadePool = ['1960s','1970s','1980s','1990s','2000s','2010s','2020s'];
   const decade     = decadeSel === 'all'
         ? decadePool[Math.floor(Math.random()*decadePool.length)]
         : decadeSel;
