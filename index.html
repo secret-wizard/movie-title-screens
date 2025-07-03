@@ -1,11 +1,11 @@
-<!-- ───────────────  POSTER  ─────────────── -->
+<!-- POSTER -->
 <img id="poster"
      class="image image-dither"
      alt="Movie Title Screen"
      style="height:480px;width:auto;max-width:100%;
             object-fit:cover;object-position:center;">
 
-<!-- ───────────────  LOGIC  ─────────────── -->
+<!-- LOGIC -->
 <script>
 document.addEventListener('DOMContentLoaded', () => {
 
@@ -18,7 +18,7 @@ document.addEventListener('DOMContentLoaded', () => {
     );
   }
 
-  /* 1️⃣  Resolve decade selector (supports “All”) */
+  /* 1️⃣  Resolve decade selector */
   const decadeSel  = '{{ trmnl.plugin_settings.custom_fields_values.decade | downcase | default: "all" }}';
   const decadePool = ['1970s','1980s','1990s','2000s'];
   const decade     = decadeSel === 'all'
@@ -37,7 +37,7 @@ document.addEventListener('DOMContentLoaded', () => {
     return a;
   }
 
-  /* 4️⃣  Fetch → pick → display */
+  /* 4️⃣  Fetch → Pick → Display */
   fetch(jsonUrl)
     .then(r => r.ok ? r.json() : Promise.reject(r.status))
     .then(d => {
