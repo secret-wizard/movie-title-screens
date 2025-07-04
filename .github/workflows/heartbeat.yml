@@ -1,28 +1,34 @@
 name: Update heartbeat.json
 
 permissions:
-  contents: write                # allow the workflow to push commits
+  contents: write                  # allow pushes
 
 on:
   schedule:
-    - cron: '*/10 * * * *'       # every 10 min
-  workflow_dispatch:             # manual trigger
+    - cron: '*/10 * * * *'         # every 10 min
+  workflow_dispatch:
 
 concurrency:
   group: heartbeat-json
-  cancel-in-progress: true       # never let two heartbeat jobs overlap
+  cancel-in-progress: true         # avoid overlapping jobs
 
 jobs:
   bump:
     runs-on: ubuntu-latest
-    timeout-minutes: 4           # auto-kill if the job hangs >4 min
+    timeout-minutes: 4             # auto-kill if job hangs >4 min
 
     steps:
       - name: Checkout repo
         uses: actions/checkout@v4
         with:
-          fetch-depth: 0               # full history (needed for rebase)
-          persist-credentials: true
+          fetch-depth: 0
+          persist-credentials: false   # we’ll set our own remote URL
+
+      # --- inject token into the remote URL so pull/push are always authed ---
+      - name: Configure git credentials
+        run: |
+          git remote set-url origin \
+            https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git
 
       - name: Write fresh timestamp
         run: |
@@ -37,9 +43,10 @@ jobs:
 
       - name: Commit & push
         uses: EndBug/add-and-commit@v9
+        env:                          # expose token to the action
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           message: 'chore: bump heartbeat 🫀'
           add: 'heartbeat.json'
           default_author: github_actions
-          pull: true                    # auto `git pull --rebase`
-          github_token: ${{ secrets.GITHUB_TOKEN }}  # explicit auth
+          pull: true                  # rebase if branch advanced
