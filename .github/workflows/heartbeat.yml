@@ -1,27 +1,27 @@
 name: Update heartbeat.json
 
 permissions:
-  contents: write          # allow the workflow to push commits
+  contents: write                # allow the workflow to push commits
 
 on:
   schedule:
-    - cron: '*/10 * * * *' # every 10 min
-  workflow_dispatch:       # manual trigger
+    - cron: '*/10 * * * *'       # every 10 min
+  workflow_dispatch:             # manual trigger
 
 concurrency:
   group: heartbeat-json
-  cancel-in-progress: true # never let two heartbeat jobs overlap
+  cancel-in-progress: true       # never let two heartbeat jobs overlap
 
 jobs:
   bump:
     runs-on: ubuntu-latest
-    timeout-minutes: 4      # auto-kill if the job hangs >4 min
+    timeout-minutes: 4           # auto-kill if the job hangs >4 min
 
     steps:
       - name: Checkout repo
         uses: actions/checkout@v4
         with:
-          fetch-depth: 0           # full history (needed for rebase)
+          fetch-depth: 0               # full history (needed for rebase)
           persist-credentials: true
 
       - name: Write fresh timestamp
@@ -41,5 +41,5 @@ jobs:
           message: 'chore: bump heartbeat 🫀'
           add: 'heartbeat.json'
           default_author: github_actions
-          pull: true              # auto `git pull --rebase` before push
-          retry: 3                # retry up to 3× on network hiccups
+          pull: true                    # auto `git pull --rebase`
+          github_token: ${{ secrets.GITHUB_TOKEN }}  # explicit auth
