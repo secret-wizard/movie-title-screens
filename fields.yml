@@ -1,0 +1,19 @@
+- keyname: about
+  name: About This Plugin
+  field_type: author_bio
+  description: Movie Title Screens™ is an image-based plugin for all movie lovers, randomly cycling through title screens from your selected decade. Created by Quaid — @quaid1 on Discord.
+  github_url: https://github.com/secret-wizard/movie-title-screens
+
+- keyname: decade
+  field_type: select
+  name: Choose Your Decade
+  options:
+    - All
+    - 1960s
+    - 1970s
+    - 1980s
+    - 1990s
+    - 2000s
+    - 2010s
+    - 2020s
+  default: All
