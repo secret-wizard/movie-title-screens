@@ -32,3 +32,4 @@ jobs:
           message: 'chore: bump heartbeat 🫀'
           add: 'heartbeat.json'
           default_author: github_actions
+          pull: true
