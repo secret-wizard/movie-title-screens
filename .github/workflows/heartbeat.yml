@@ -1,35 +1,19 @@
 name: Update heartbeat.json
 
 permissions:
-  contents: write          # allow pushes
+  contents: write            # let the workflow push commits
 
 on:
   schedule:
-    - cron: '*/10 * * * *' # every 10 min
-  workflow_dispatch:
-
-concurrency:
-  group: heartbeat-json
-  cancel-in-progress: true
+    - cron: '*/10 * * * *'   # every 10 min
+  workflow_dispatch:         # allow manual runs
 
 jobs:
   bump:
     runs-on: ubuntu-latest
-    timeout-minutes: 4
-
     steps:
       - name: Checkout repo
         uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-          persist-credentials: false    # we'll inject our own remote URL
-
-      - name: Configure git credentials
-        run: |
-          git remote set-url origin \
-            https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git
-          git config user.name "github-actions"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
 
       - name: Write fresh timestamp
         run: |
@@ -43,8 +27,8 @@ jobs:
           EOF
 
       - name: Commit & push
-        run: |
-          git add heartbeat.json
-          git commit -m "chore: bump heartbeat 🫀" || echo "Nothing to commit"
-          git pull --rebase origin main
-          git push origin HEAD:main
+        uses: EndBug/add-and-commit@v9
+        with:
+          message: 'chore: bump heartbeat 🫀'
+          add: 'heartbeat.json'
+          default_author: github_actions
