@@ -10,7 +10,7 @@ on:
 
 concurrency:
   group: heartbeat-json
-  cancel-in-progress: true # cancel an in-flight job if a new tick starts
+  cancel-in-progress: false   # queue; don't cancel
 
 jobs:
   bump:
