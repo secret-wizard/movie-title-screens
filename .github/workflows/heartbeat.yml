@@ -31,16 +31,53 @@ jobs:
           git config user.name "github-actions"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
 
-      - name: Write fresh timestamp
+      - name: Build heartbeat with random images
         run: |
-          node - <<'EOF'
+          node - <<'SCRIPT'
           const fs = require('fs');
-          fs.writeFileSync(
-            'heartbeat.json',
-            JSON.stringify({ timestamp: Date.now() })
-          );
-          console.log('heartbeat.json updated');
-          EOF
+          const path = require('path');
+
+          const decades = ['1960s','1970s','1980s','1990s','2000s','2010s','2020s'];
+
+          // Pick one random element from an array
+          function pickRandom(arr) {
+            return arr[Math.floor(Math.random() * arr.length)];
+          }
+
+          // Build an images object: one random URL per decade + one for "all"
+          const images = {};
+          const allPool = [];
+
+          for (const decade of decades) {
+            const jsonPath = path.join(decade, 'images.json');
+            if (!fs.existsSync(jsonPath)) {
+              console.warn(`[heartbeat] ${jsonPath} not found — skipping`);
+              continue;
+            }
+            const data = JSON.parse(fs.readFileSync(jsonPath, 'utf8'));
+            const list = data.images || [];
+            if (list.length === 0) {
+              console.warn(`[heartbeat] ${decade}/images.json is empty — skipping`);
+              continue;
+            }
+            images[decade] = pickRandom(list);
+            allPool.push(...list);
+          }
+
+          // "all" picks from every decade's combined pool
+          if (allPool.length > 0) {
+            images['all'] = pickRandom(allPool);
+          }
+
+          const heartbeat = {
+            timestamp: Date.now(),
+            images: images
+          };
+
+          fs.writeFileSync('heartbeat.json', JSON.stringify(heartbeat));
+          console.log('[heartbeat] heartbeat.json updated with image URLs');
+          console.log(JSON.stringify(heartbeat, null, 2));
+          SCRIPT
 
       - name: Commit & push
         run: |
